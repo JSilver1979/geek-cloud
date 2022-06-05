@@ -5,15 +5,14 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-
-<VBox xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.geekbrains.cloud.june.cloudapplication.ChatController">
+<VBox xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.geekbrains.cloud.june.cloudapplication.ChatController">
    <HBox>
-      <ListView fx:id="clientView" prefHeight="344.0" prefWidth="226.0"/>
-      <ListView fx:id="serverView" prefHeight="344.0" prefWidth="226.0"/>
+      <ListView fx:id="clientView" prefHeight="344.0" prefWidth="226.0" />
+      <ListView fx:id="serverView" prefHeight="344.0" prefWidth="226.0" />
    </HBox>
    <HBox prefHeight="31.0" prefWidth="452.0">
-      <Button onAction="#upload" mnemonicParsing="false" prefHeight="33.0" prefWidth="69.0" text="To server"/>
-      <Button onAction="#download" mnemonicParsing="false" prefHeight="46.0" prefWidth="83.0" text="From server"/>
+      <Button focusTraversable="false" mnemonicParsing="false" onAction="#upload" HBox.hgrow="ALWAYS" maxWidth="Infinity" text="To server" />
+      <Button focusTraversable="false" mnemonicParsing="false" onAction="#download" HBox.hgrow="ALWAYS" maxWidth="Infinity" text="From server" />
+      <Button focusTraversable="false" mnemonicParsing="false" onAction="#upDirAction" maxWidth="Infinity" HBox.hgrow="ALWAYS" text="Go Up" />
    </HBox>
 </VBox>

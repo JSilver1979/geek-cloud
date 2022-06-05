@@ -1,14 +1,12 @@
 package com.geekbrains.cloud.netty.handler;
 
-import com.geekbrains.cloud.CloudMessage;
-import com.geekbrains.cloud.FileMessage;
-import com.geekbrains.cloud.FileRequest;
-import com.geekbrains.cloud.ListFiles;
+import com.geekbrains.cloud.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage> {
 
@@ -30,6 +28,21 @@ public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage> 
         } else if (cloudMessage instanceof FileMessage fileMessage) {
             Files.write(currentDir.resolve(fileMessage.getName()), fileMessage.getData());
             ctx.writeAndFlush(new ListFiles(currentDir));
+        } else if (cloudMessage instanceof PathInRequest pathInRequest) {
+            if (Paths.get(String.valueOf(currentDir)).resolve(pathInRequest.getDirName()).toFile().isFile()) {
+                // here needs new message for warning
+                ctx.writeAndFlush(new WarningMessage(pathInRequest.getDirName() + " not a Directory!"));
+            }else {
+                currentDir = Paths.get(String.valueOf(currentDir)).resolve(pathInRequest.getDirName());
+                ctx.writeAndFlush(new ListFiles(currentDir));
+            }
+        } else if (cloudMessage instanceof  PathUpRequest pathUpRequest) {
+            if (Paths.get(String.valueOf(currentDir)).getParent() == null) {
+                ctx.writeAndFlush(new WarningMessage("This is a root Directory.\n Cannot go higher."));
+            } else {
+                currentDir = Paths.get(String.valueOf(currentDir)).getParent().normalize();
+                ctx.writeAndFlush(new ListFiles(currentDir));
+            }
         }
     }
 }
