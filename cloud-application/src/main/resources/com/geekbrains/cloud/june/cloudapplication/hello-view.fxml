@@ -3,16 +3,23 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
 <VBox xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.geekbrains.cloud.june.cloudapplication.ChatController">
    <HBox>
       <ListView fx:id="clientView" prefHeight="344.0" prefWidth="226.0" />
+      <Pane prefHeight="344.0" prefWidth="42.0">
+         <children>
+            <Button focusTraversable="false" layoutY="159.0" maxWidth="Infinity" mnemonicParsing="false" onAction="#upload" text="&gt;&gt;&gt;" />
+            <Button focusTraversable="false" layoutY="200.0" maxWidth="Infinity" mnemonicParsing="false" onAction="#download" text="&lt;&lt;&lt;" />
+         </children>
+      </Pane>
       <ListView fx:id="serverView" prefHeight="344.0" prefWidth="226.0" />
    </HBox>
-   <HBox prefHeight="31.0" prefWidth="452.0">
-      <Button focusTraversable="false" mnemonicParsing="false" onAction="#upload" HBox.hgrow="ALWAYS" maxWidth="Infinity" text="To server" />
-      <Button focusTraversable="false" mnemonicParsing="false" onAction="#download" HBox.hgrow="ALWAYS" maxWidth="Infinity" text="From server" />
-      <Button focusTraversable="false" mnemonicParsing="false" onAction="#upDirAction" maxWidth="Infinity" HBox.hgrow="ALWAYS" text="Go Up" />
+   <HBox prefHeight="31.0" prefWidth="452.0" spacing="10.0">
+      <Button focusTraversable="false" maxWidth="Infinity" mnemonicParsing="false" onAction="#deleteAction" text="Delete" HBox.hgrow="ALWAYS" />
+      <Button focusTraversable="false" maxWidth="Infinity" mnemonicParsing="false" onAction="#renameAction" text="Rename" HBox.hgrow="ALWAYS" />
+      <Button focusTraversable="false" maxWidth="Infinity" mnemonicParsing="false" onAction="#upDirAction" text="Go Up" HBox.hgrow="ALWAYS" />
    </HBox>
 </VBox>

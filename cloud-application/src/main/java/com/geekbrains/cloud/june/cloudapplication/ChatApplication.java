@@ -13,7 +13,7 @@ public class ChatApplication extends Application {
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("hello-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
-        stage.setTitle("Chat");
+        stage.setTitle("Simple cloud manager");
         stage.setScene(scene);
         stage.show();
     }

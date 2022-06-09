@@ -17,6 +17,14 @@ public class ListFiles implements CloudMessage {
         files = Files.list(path)
                 .map(p -> p.getFileName().toString())
                 .collect(Collectors.toList());
+        for (int i = 0; i < files.size(); i++) {
+            if (path.resolve(files.get(i)).toFile().isFile()) {
+                files.set(i,"F: " + files.get(i));
+            } else {
+                files.set(i, "D: " + files.get(i));
+            }
+        }
+
     }
 
 }

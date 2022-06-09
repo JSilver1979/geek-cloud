@@ -5,11 +5,17 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ListView;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +28,8 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 public class ChatController implements Initializable {
-
+    private final Image DIR_IMAGE = new Image("folder.png");
+    private final Image FILE_IMAGE = new Image("file.png");
 
     private String homeDir;
 
@@ -33,6 +40,9 @@ public class ChatController implements Initializable {
     public ListView<String> serverView;
 
     private Network network;
+
+    private Stage renameStage;
+    private RenameController renameController;
 
     private void readLoop() {
         try {
@@ -48,12 +58,11 @@ public class ChatController implements Initializable {
                     Files.write(current, fileMessage.getData());
                     Platform.runLater(() -> {
                         clientView.getItems().clear();
-                        clientView.getItems().addAll(getFiles(homeDir));
+                        clientView.getItems().addAll(getFilesList(homeDir));
                     });
                 } else if (message instanceof WarningMessage warningMessage) {
                     Platform.runLater(() -> {
-                        Alert alert = new Alert(Alert.AlertType.WARNING, warningMessage.getWarning(), ButtonType.OK);
-                        alert.showAndWait();
+                        getWarning(warningMessage.getWarning());
                     });
                 }
             }
@@ -68,7 +77,11 @@ public class ChatController implements Initializable {
         try {
             homeDir = "client_files";
             clientView.getItems().clear();
-            clientView.getItems().addAll(getFiles(homeDir));
+            clientView.getItems().addAll(getFilesList(homeDir));
+
+            setImages(clientView);
+            setImages(serverView);
+
             network = new Network(8189);
             Thread readThread = new Thread(this::readLoop);
             readThread.setDaemon(true);
@@ -81,14 +94,14 @@ public class ChatController implements Initializable {
             @Override
             public void handle(MouseEvent mouseEvent) {
                 if (mouseEvent.getClickCount() == 2) {
-                    Path path =Paths.get(homeDir).resolve(clientView.getSelectionModel().getSelectedItem().toString());
+                    String fileName = trueFileName(clientView.getSelectionModel().getSelectedItem());
+                    Path path = Paths.get(homeDir).resolve(fileName);
                     if (path.toFile().isFile()) {
-                        Alert alert = new Alert(Alert.AlertType.WARNING, "It is not a Directory!", ButtonType.OK);
-                        alert.showAndWait();
+                        getWarning("It is not a Directory");
                     } else {
                         homeDir = path.toString();
                         clientView.getItems().clear();
-                        clientView.getItems().addAll(getFiles(homeDir));
+                        clientView.getItems().addAll(getFilesList(homeDir));
                     }
                 }
             }
@@ -98,7 +111,7 @@ public class ChatController implements Initializable {
             @Override
             public void handle(MouseEvent mouseEvent) {
                 if (mouseEvent.getClickCount() ==2) {
-                    String dir = serverView.getSelectionModel().getSelectedItem();
+                    String dir = trueFileName(serverView.getSelectionModel().getSelectedItem());
                     try {
                         network.write(new PathInRequest(dir));
                     } catch (IOException e) {
@@ -109,36 +122,166 @@ public class ChatController implements Initializable {
         });
     }
 
-    private List<String> getFiles(String dir) {
+    private List<String> getFilesList(String dir) {
         String[] list = new File(dir).list();
+        // trying to show is file or dir
         assert list != null;
+        for (int i = 0; i < list.length; i++) {
+            if (Path.of(dir).resolve(list[i]).toFile().isFile()) {
+                list[i] = "F: " + list[i];
+            } else {
+                list[i] = "D: " + list[i];
+            }
+        }
         return Arrays.asList(list);
     }
 
+    private void setImages(ListView lv) {
+        lv.setCellFactory(param -> new ListCell<String>() {
+            private ImageView imageView = new ImageView();
+            @Override
+            public void updateItem(String name, boolean empty) {
+
+                super.updateItem(name, empty);
+                if (empty) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    String[] marker = name.split(" ",2);
+                    if (marker[0].equals("D:")) {
+                        imageView.setImage(DIR_IMAGE);
+                        imageView.setFitHeight(20.0);
+                        imageView.setFitWidth(20.0);
+                    } else {
+                        imageView.setImage(FILE_IMAGE);
+                        imageView.setFitHeight(20.0);
+                        imageView.setFitWidth(20.0);
+                    }
+                    setText(marker[1]);
+                    setGraphic(imageView);
+                }
+            }
+        });
+    }
+
+    private void getWarning(String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING, message, ButtonType.OK);
+        alert.showAndWait();
+    }
+    private String trueFileName (String str) {
+        String[] splitter = str.split(": ", 2);
+        return splitter[1];
+    }
+
     public void upload(ActionEvent actionEvent) throws IOException {
-        String file = clientView.getSelectionModel().getSelectedItem();
+        String file = trueFileName(clientView.getSelectionModel().getSelectedItem());
         network.write(new FileMessage(Path.of(homeDir).resolve(file)));
     }
 
     public void download(ActionEvent actionEvent) throws IOException {
-        String file = serverView.getSelectionModel().getSelectedItem();
+        String file = trueFileName(serverView.getSelectionModel().getSelectedItem());
         network.write(new FileRequest(file));
     }
 
     public void upDirAction(ActionEvent actionEvent) throws IOException {
         if (clientView.isFocused()) {
             if (Paths.get(homeDir).getParent() == null) {
-                Alert alert = new Alert(Alert.AlertType.WARNING, "Cannot go up.\n This is root directory!", ButtonType.OK);
-                alert.showAndWait();
+                getWarning("Cannot go up.\n This is root directory!");
             } else {
             homeDir = Paths.get(homeDir).getParent().toString();
                 clientView.getItems().clear();
-                clientView.getItems().addAll(getFiles(homeDir));
+                clientView.getItems().addAll(getFilesList(homeDir));
             }
         }
         if (serverView.isFocused()) {
             String upDir = serverView.getSelectionModel().getSelectedItem();
             network.write(new PathUpRequest(upDir));
         }
+    }
+
+    public void deleteAction(ActionEvent actionEvent) throws IOException {
+        if (clientView.isFocused()) {
+            try {
+                Files.deleteIfExists(Paths.get(homeDir).resolve(trueFileName(clientView.getSelectionModel().getSelectedItem())));
+            } catch (IOException e) {
+                getWarning("Cannot delete file: " + trueFileName(clientView.getSelectionModel().getSelectedItem()));
+            }
+
+            clientView.getItems().clear();
+                clientView.getItems().addAll(getFilesList(homeDir));
+        }
+        if (serverView.isFocused()) {
+            String fileToDelete = trueFileName(serverView.getSelectionModel().getSelectedItem());
+            network.write(new DeleteRequest(fileToDelete));
+        }
+    }
+
+    public void renameAction(ActionEvent actionEvent) {
+        try {
+//            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/geekbrains/cloud/june/cloudapplication/rename.fxml"));
+//            Parent root = fxmlLoader.load();
+//
+//            renameStage = new Stage();
+//            renameStage.setTitle("Rename file");
+//            renameStage.setScene(new Scene(root));
+//            renameStage.initModality(Modality.APPLICATION_MODAL);
+//            renameStage.initStyle(StageStyle.UTILITY);
+//            renameStage.show();
+//            renameController = fxmlLoader.getController();
+
+            if (clientView.isFocused()) {
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/geekbrains/cloud/june/cloudapplication/rename.fxml"));
+                Parent root = fxmlLoader.load();
+
+                renameStage = new Stage();
+                renameStage.setTitle("Rename file");
+                renameStage.setScene(new Scene(root));
+                renameStage.initModality(Modality.APPLICATION_MODAL);
+                renameStage.initStyle(StageStyle.UTILITY);
+                renameStage.show();
+                renameController = fxmlLoader.getController();
+
+                renameController.setController(this, clientView, Paths.get(homeDir)
+                        .resolve(trueFileName(clientView.getSelectionModel().getSelectedItem())));
+            }
+            if (serverView.isFocused()) {
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/geekbrains/cloud/june/cloudapplication/rename.fxml"));
+                Parent root = fxmlLoader.load();
+
+                renameStage = new Stage();
+                renameStage.setTitle("Rename file");
+                renameStage.setScene(new Scene(root));
+                renameStage.initModality(Modality.APPLICATION_MODAL);
+                renameStage.initStyle(StageStyle.UTILITY);
+                renameStage.show();
+                renameController = fxmlLoader.getController();
+
+                renameController.setController(this, serverView, Paths.get(trueFileName(serverView.getSelectionModel().getSelectedItem())));
+            }
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void setNewFilename(Path oldPath, String newName, ListView lv) {
+        if (clientView.equals(lv)) {
+            File fileToRename = oldPath.toFile();
+            fileToRename.renameTo(oldPath.getParent().resolve(newName).toFile());
+
+            clientView.getItems().clear();
+            clientView.getItems().addAll(getFilesList(homeDir));
+        }
+
+        if(serverView.equals(lv)) {
+            String oldFilename = oldPath.toString();
+            try {
+                network.write(new RenameRequest(oldFilename, newName));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+
     }
 }
