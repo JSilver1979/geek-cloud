@@ -30,6 +30,8 @@ import java.util.ResourceBundle;
 public class ChatController implements Initializable {
     private final Image DIR_IMAGE = new Image("folder.png");
     private final Image FILE_IMAGE = new Image("file.png");
+    @FXML
+    public Button connectBttn;
 
     private String homeDir;
 
@@ -74,22 +76,13 @@ public class ChatController implements Initializable {
     // post init fx fields
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        try {
-            homeDir = "client_files";
-            clientView.getItems().clear();
-            clientView.getItems().addAll(getFilesList(homeDir));
+        homeDir = "client_files";
+        clientView.getItems().clear();
+        clientView.getItems().addAll(getFilesList(homeDir));
 
-            setImages(clientView);
-            setImages(serverView);
-
-            network = new Network(8189);
-            Thread readThread = new Thread(this::readLoop);
-            readThread.setDaemon(true);
-            readThread.start();
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-        }
-
+        setImages(clientView);
+        setImages(serverView);
+        
         clientView.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
@@ -202,7 +195,12 @@ public class ChatController implements Initializable {
     public void deleteAction(ActionEvent actionEvent) throws IOException {
         if (clientView.isFocused()) {
             try {
-                Files.deleteIfExists(Paths.get(homeDir).resolve(trueFileName(clientView.getSelectionModel().getSelectedItem())));
+                if (clientView.getSelectionModel().getSelectedItem() == null){
+                    getWarning("Please, choose file to delete!");
+                } else {
+                    Files.deleteIfExists(Paths.get(homeDir)
+                            .resolve(trueFileName(clientView.getSelectionModel().getSelectedItem())));
+                }
             } catch (IOException e) {
                 getWarning("Cannot delete file: " + trueFileName(clientView.getSelectionModel().getSelectedItem()));
             }
@@ -211,52 +209,54 @@ public class ChatController implements Initializable {
                 clientView.getItems().addAll(getFilesList(homeDir));
         }
         if (serverView.isFocused()) {
-            String fileToDelete = trueFileName(serverView.getSelectionModel().getSelectedItem());
-            network.write(new DeleteRequest(fileToDelete));
+            if (serverView.getSelectionModel().getSelectedItem() == null) {
+                getWarning("Please, choose file to delete!");
+            } else {
+                String fileToDelete = trueFileName(serverView.getSelectionModel().getSelectedItem());
+                network.write(new DeleteRequest(fileToDelete));
+            }
         }
     }
 
     public void renameAction(ActionEvent actionEvent) {
         try {
-//            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/geekbrains/cloud/june/cloudapplication/rename.fxml"));
-//            Parent root = fxmlLoader.load();
-//
-//            renameStage = new Stage();
-//            renameStage.setTitle("Rename file");
-//            renameStage.setScene(new Scene(root));
-//            renameStage.initModality(Modality.APPLICATION_MODAL);
-//            renameStage.initStyle(StageStyle.UTILITY);
-//            renameStage.show();
-//            renameController = fxmlLoader.getController();
 
             if (clientView.isFocused()) {
-                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/geekbrains/cloud/june/cloudapplication/rename.fxml"));
-                Parent root = fxmlLoader.load();
+                if (clientView.getSelectionModel().getSelectedItem() == null) {
+                    getWarning("Please, choose file to rename!");
+                } else {
+                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/geekbrains/cloud/june/cloudapplication/rename.fxml"));
+                    Parent root = fxmlLoader.load();
 
-                renameStage = new Stage();
-                renameStage.setTitle("Rename file");
-                renameStage.setScene(new Scene(root));
-                renameStage.initModality(Modality.APPLICATION_MODAL);
-                renameStage.initStyle(StageStyle.UTILITY);
-                renameStage.show();
-                renameController = fxmlLoader.getController();
+                    renameStage = new Stage();
+                    renameStage.setTitle("Rename file");
+                    renameStage.setScene(new Scene(root));
+                    renameStage.initModality(Modality.APPLICATION_MODAL);
+                    renameStage.initStyle(StageStyle.UTILITY);
+                    renameStage.show();
+                    renameController = fxmlLoader.getController();
 
-                renameController.setController(this, clientView, Paths.get(homeDir)
-                        .resolve(trueFileName(clientView.getSelectionModel().getSelectedItem())));
+                    renameController.setController(this, clientView, Paths.get(homeDir)
+                            .resolve(trueFileName(clientView.getSelectionModel().getSelectedItem())));
+                }
             }
             if (serverView.isFocused()) {
-                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/geekbrains/cloud/june/cloudapplication/rename.fxml"));
-                Parent root = fxmlLoader.load();
+                if (serverView.getSelectionModel().getSelectedItem() == null) {
+                    getWarning("Please, choose file to rename!");
+                } else {
+                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/geekbrains/cloud/june/cloudapplication/rename.fxml"));
+                    Parent root = fxmlLoader.load();
 
-                renameStage = new Stage();
-                renameStage.setTitle("Rename file");
-                renameStage.setScene(new Scene(root));
-                renameStage.initModality(Modality.APPLICATION_MODAL);
-                renameStage.initStyle(StageStyle.UTILITY);
-                renameStage.show();
-                renameController = fxmlLoader.getController();
+                    renameStage = new Stage();
+                    renameStage.setTitle("Rename file");
+                    renameStage.setScene(new Scene(root));
+                    renameStage.initModality(Modality.APPLICATION_MODAL);
+                    renameStage.initStyle(StageStyle.UTILITY);
+                    renameStage.show();
+                    renameController = fxmlLoader.getController();
 
-                renameController.setController(this, serverView, Paths.get(trueFileName(serverView.getSelectionModel().getSelectedItem())));
+                    renameController.setController(this, serverView, Paths.get(trueFileName(serverView.getSelectionModel().getSelectedItem())));
+                }
             }
         }
         catch (IOException e) {
@@ -281,6 +281,19 @@ public class ChatController implements Initializable {
                 throw new RuntimeException(e);
             }
 
+        }
+
+    }
+
+    public void connectAction(ActionEvent actionEvent) {
+        try {
+            network = new Network(8189);
+            Thread readThread = new Thread(this::readLoop);
+            readThread.setDaemon(true);
+            readThread.start();
+            connectBttn.setVisible(false);
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
         }
 
     }
