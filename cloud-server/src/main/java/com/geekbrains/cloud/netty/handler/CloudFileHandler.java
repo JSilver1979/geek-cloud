@@ -1,14 +1,13 @@
 package com.geekbrains.cloud.netty.handler;
 
-import com.geekbrains.cloud.CloudMessage;
-import com.geekbrains.cloud.FileMessage;
-import com.geekbrains.cloud.FileRequest;
-import com.geekbrains.cloud.ListFiles;
+import com.geekbrains.cloud.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage> {
 
@@ -29,6 +28,28 @@ public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage> 
             ctx.writeAndFlush(new FileMessage(currentDir.resolve(fileRequest.getName())));
         } else if (cloudMessage instanceof FileMessage fileMessage) {
             Files.write(currentDir.resolve(fileMessage.getName()), fileMessage.getData());
+            ctx.writeAndFlush(new ListFiles(currentDir));
+        } else if (cloudMessage instanceof PathInRequest pathInRequest) {
+            if (Paths.get(String.valueOf(currentDir)).resolve(pathInRequest.getDirName()).toFile().isFile()) {
+                // here needs new message for warning
+                ctx.writeAndFlush(new WarningMessage(pathInRequest.getDirName() + " not a Directory!"));
+            }else {
+                currentDir = Paths.get(String.valueOf(currentDir)).resolve(pathInRequest.getDirName());
+                ctx.writeAndFlush(new ListFiles(currentDir));
+            }
+        } else if (cloudMessage instanceof  PathUpRequest) {
+            if (Paths.get(String.valueOf(currentDir)).getParent() == null) {
+                ctx.writeAndFlush(new WarningMessage("This is a root Directory.\n Cannot go higher."));
+            } else {
+                currentDir = Paths.get(String.valueOf(currentDir)).getParent().normalize();
+                ctx.writeAndFlush(new ListFiles(currentDir));
+            }
+        } else if (cloudMessage instanceof DeleteRequest deleteRequest) {
+            Files.deleteIfExists(Paths.get(currentDir.toString()).resolve(deleteRequest.getDeleteFileName()));
+            ctx.writeAndFlush(new ListFiles(currentDir));
+        } else if (cloudMessage instanceof RenameRequest renameRequest) {
+            File toRename = Paths.get(currentDir.toString()).resolve(renameRequest.getOldFilename()).toFile();
+            toRename.renameTo(Paths.get(currentDir.toString()).resolve(renameRequest.getNewFilename()).toFile());
             ctx.writeAndFlush(new ListFiles(currentDir));
         }
     }
