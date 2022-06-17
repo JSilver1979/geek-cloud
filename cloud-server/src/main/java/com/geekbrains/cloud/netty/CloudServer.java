@@ -13,8 +13,19 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import lombok.extern.slf4j.Slf4j;
 
+import java.sql.*;
+
 @Slf4j
 public class CloudServer {
+
+    private Connection connection;
+    private Statement statement;
+
+    public AuthService getAuthService() {
+        return authService;
+    }
+
+    private AuthService authService;
 
     public CloudServer() {
 
@@ -22,7 +33,9 @@ public class CloudServer {
         EventLoopGroup worker = new NioEventLoopGroup();
 
         try {
-
+            connectDB();
+            authService = new AuthService(connection,statement);
+            log.debug("Connection to database established.");
             ServerBootstrap server = new ServerBootstrap();
             server.group(auth, worker)
                     .channel(NioServerSocketChannel.class)
@@ -32,7 +45,7 @@ public class CloudServer {
                             socketChannel.pipeline().addLast(
                                     new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
                                     new ObjectEncoder(),
-                                    new CloudFileHandler()
+                                    new CloudFileHandler(authService)
                             );
                         }
                     });
@@ -40,15 +53,45 @@ public class CloudServer {
             ChannelFuture future = server.bind(8189).sync();
             log.debug("Server is ready");
             future.channel().closeFuture().sync();
+
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             auth.shutdownGracefully();
             worker.shutdownGracefully();
+            disconnectDB();
         }
     }
 
     public static void main(String[] args) {
         new CloudServer();
     }
+
+    public void connectDB() {
+        try {
+            Class.forName("org.sqlite.JDBC");
+            connection = DriverManager.getConnection("jdbc:sqlite:cloud.db");
+            statement = connection.createStatement();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void disconnectDB() {
+        try {
+            if (statement != null) {
+                statement.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
+

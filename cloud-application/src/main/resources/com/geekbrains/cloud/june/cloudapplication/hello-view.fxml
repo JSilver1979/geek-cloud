@@ -13,9 +13,9 @@
    <HBox alignment="CENTER" prefHeight="42.0" prefWidth="494.0" spacing="10.0">
       <children>
          <Label text="Login: " />
-         <TextField />
+         <TextField fx:id="loginField"/>
          <Label layoutX="10.0" layoutY="10.0" text="Password: " />
-         <PasswordField />
+         <PasswordField fx:id="pwdField"/>
          <Button fx:id="connectBttn" mnemonicParsing="false" onAction="#connectAction" text="Connect" />
       </children>
    </HBox>

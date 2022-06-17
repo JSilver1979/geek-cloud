@@ -32,6 +32,10 @@ public class ChatController implements Initializable {
     private final Image FILE_IMAGE = new Image("file.png");
     @FXML
     public Button connectBttn;
+    @FXML
+    public PasswordField pwdField;
+    @FXML
+    public TextField loginField;
 
     private String homeDir;
 
@@ -50,7 +54,12 @@ public class ChatController implements Initializable {
         try {
             while (true) {
                 CloudMessage message = network.read();
-                if (message instanceof ListFiles listFiles) {
+                if (message instanceof AuthApprove authApprove) {
+                    connectBttn.setVisible(false);
+                    loginField.setEditable(false);
+                    pwdField.setEditable(false);
+                }
+                else if (message instanceof ListFiles listFiles) {
                     Platform.runLater(() -> {
                         serverView.getItems().clear();
                         serverView.getItems().addAll(listFiles.getFiles());
@@ -291,7 +300,8 @@ public class ChatController implements Initializable {
             Thread readThread = new Thread(this::readLoop);
             readThread.setDaemon(true);
             readThread.start();
-            connectBttn.setVisible(false);
+//            connectBttn.setVisible(false);
+            network.write(new AuthRequest(loginField.getText(),pwdField.getText()));
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }
