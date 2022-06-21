@@ -1,9 +1,6 @@
 package com.geekbrains.cloud.netty;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,5 +44,24 @@ public class AuthService {
         }
 
         return isAuthenticated;
+    }
+
+    public String passRegistration (String login, String password) {
+        for (UserData user : users) {
+            if (user.login.equals(login)) {
+                return "User already exist";
+            }
+        }
+        try (PreparedStatement prepInsert = authConnection
+                .prepareStatement("INSERT INTO users (uname,upwd) VALUES (?,?);")) {
+            prepInsert.setString(1,login);
+            prepInsert.setString(2,password);
+            prepInsert.addBatch();
+            prepInsert.executeBatch();
+            users.add(new UserData(login,password));
+        } catch (SQLException e) {
+            return "Something is wrong with database: " + e.getMessage();
+        }
+        return "User: " + login + " registered";
     }
 }

@@ -39,8 +39,9 @@ public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage> 
             } else {
                 ctx.writeAndFlush(new WarningMessage("wrong login or password"));
             }
-        }
-         else if (cloudMessage instanceof FileRequest fileRequest) {
+        } else if (cloudMessage instanceof RegRequest regRequest) {
+            ctx.writeAndFlush(new WarningMessage(authService.passRegistration(regRequest.getLogin(), regRequest.getPwd())));
+        } else if (cloudMessage instanceof FileRequest fileRequest) {
             ctx.writeAndFlush(new FileMessage(userDir.resolve(fileRequest.getName())));
         } else if (cloudMessage instanceof FileMessage fileMessage) {
             Files.write(userDir.resolve(fileMessage.getName()), fileMessage.getData());

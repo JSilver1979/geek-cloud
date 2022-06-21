@@ -9,14 +9,15 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox prefHeight="417.0" prefWidth="584.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.geekbrains.cloud.june.cloudapplication.ChatController">
+<VBox prefHeight="417.0" prefWidth="630.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.geekbrains.cloud.june.cloudapplication.ChatController">
    <HBox alignment="CENTER" prefHeight="42.0" prefWidth="494.0" spacing="10.0">
       <children>
          <Label text="Login: " />
-         <TextField fx:id="loginField"/>
+         <TextField fx:id="loginField" />
          <Label layoutX="10.0" layoutY="10.0" text="Password: " />
-         <PasswordField fx:id="pwdField"/>
+         <PasswordField fx:id="pwdField" />
          <Button fx:id="connectBttn" mnemonicParsing="false" onAction="#connectAction" text="Connect" />
+         <Button fx:id="regBttn" onAction="#registerAction" mnemonicParsing="false" text="Register" />
       </children>
    </HBox>
    <HBox VBox.vgrow="ALWAYS">
@@ -30,8 +31,8 @@
       <ListView fx:id="serverView" prefHeight="344.0" prefWidth="226.0" HBox.hgrow="ALWAYS" />
    </HBox>
    <HBox prefHeight="31.0" prefWidth="452.0" spacing="10.0">
-      <Button focusTraversable="false" maxWidth="Infinity" mnemonicParsing="false" onAction="#deleteAction" text="Delete" HBox.hgrow="ALWAYS" />
-      <Button focusTraversable="false" maxWidth="Infinity" mnemonicParsing="false" onAction="#renameAction" text="Rename" HBox.hgrow="ALWAYS" />
-      <Button focusTraversable="false" maxWidth="Infinity" mnemonicParsing="false" onAction="#upDirAction" text="Go Up" HBox.hgrow="ALWAYS" />
+      <Button focusTraversable="false" maxWidth="Infinity" mnemonicParsing="false" onAction="#deleteAction" fx:id="delBttn" text="Delete" HBox.hgrow="ALWAYS" />
+      <Button focusTraversable="false" maxWidth="Infinity" mnemonicParsing="false" onAction="#renameAction" fx:id="renameBttn" text="Rename" HBox.hgrow="ALWAYS" />
+      <Button focusTraversable="false" maxWidth="Infinity" mnemonicParsing="false" onAction="#upDirAction" fx:id="upBttn" text="Go Up" HBox.hgrow="ALWAYS" />
    </HBox>
 </VBox>
