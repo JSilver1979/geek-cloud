@@ -36,6 +36,11 @@ public class ChatController implements Initializable {
     public PasswordField pwdField;
     @FXML
     public TextField loginField;
+    @FXML
+    public Button regBttn;
+    public Button delBttn;
+    public Button renameBttn;
+    public Button upBttn;
 
     private String homeDir;
 
@@ -48,7 +53,11 @@ public class ChatController implements Initializable {
     private Network network;
 
     private Stage renameStage;
+    private Stage regStage;
     private RenameController renameController;
+    private RegisterController registerController;
+
+    private boolean isConnected;
 
     private void readLoop() {
         try {
@@ -58,8 +67,10 @@ public class ChatController implements Initializable {
                     connectBttn.setVisible(false);
                     loginField.setEditable(false);
                     pwdField.setEditable(false);
+                    regBttn.setVisible(false);
+                    isConnected = true;
                 }
-                else if (message instanceof ListFiles listFiles) {
+                else if (message instanceof ListFiles listFiles && isConnected) {
                     Platform.runLater(() -> {
                         serverView.getItems().clear();
                         serverView.getItems().addAll(listFiles.getFiles());
@@ -85,6 +96,7 @@ public class ChatController implements Initializable {
     // post init fx fields
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        isConnected = false;
         homeDir = "client_files";
         clientView.getItems().clear();
         clientView.getItems().addAll(getFilesList(homeDir));
@@ -112,7 +124,7 @@ public class ChatController implements Initializable {
         serverView.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
-                if (mouseEvent.getClickCount() ==2) {
+                if (mouseEvent.getClickCount() ==2 && isConnected) {
                     String dir = trueFileName(serverView.getSelectionModel().getSelectedItem());
                     try {
                         network.write(new PathInRequest(dir));
@@ -176,13 +188,17 @@ public class ChatController implements Initializable {
     }
 
     public void upload(ActionEvent actionEvent) throws IOException {
-        String file = trueFileName(clientView.getSelectionModel().getSelectedItem());
-        network.write(new FileMessage(Path.of(homeDir).resolve(file)));
+        if (isConnected) {
+            String file = trueFileName(clientView.getSelectionModel().getSelectedItem());
+            network.write(new FileMessage(Path.of(homeDir).resolve(file)));
+        }
     }
 
     public void download(ActionEvent actionEvent) throws IOException {
-        String file = trueFileName(serverView.getSelectionModel().getSelectedItem());
-        network.write(new FileRequest(file));
+        if (isConnected) {
+            String file = trueFileName(serverView.getSelectionModel().getSelectedItem());
+            network.write(new FileRequest(file));
+        }
     }
 
     public void upDirAction(ActionEvent actionEvent) throws IOException {
@@ -195,7 +211,7 @@ public class ChatController implements Initializable {
                 clientView.getItems().addAll(getFilesList(homeDir));
             }
         }
-        if (serverView.isFocused()) {
+        if (serverView.isFocused() && isConnected) {
             String upDir = serverView.getSelectionModel().getSelectedItem();
             network.write(new PathUpRequest(upDir));
         }
@@ -217,7 +233,7 @@ public class ChatController implements Initializable {
             clientView.getItems().clear();
                 clientView.getItems().addAll(getFilesList(homeDir));
         }
-        if (serverView.isFocused()) {
+        if (serverView.isFocused() && isConnected) {
             if (serverView.getSelectionModel().getSelectedItem() == null) {
                 getWarning("Please, choose file to delete!");
             } else {
@@ -249,7 +265,7 @@ public class ChatController implements Initializable {
                             .resolve(trueFileName(clientView.getSelectionModel().getSelectedItem())));
                 }
             }
-            if (serverView.isFocused()) {
+            if (serverView.isFocused() && isConnected) {
                 if (serverView.getSelectionModel().getSelectedItem() == null) {
                     getWarning("Please, choose file to rename!");
                 } else {
@@ -300,11 +316,44 @@ public class ChatController implements Initializable {
             Thread readThread = new Thread(this::readLoop);
             readThread.setDaemon(true);
             readThread.start();
-//            connectBttn.setVisible(false);
             network.write(new AuthRequest(loginField.getText(),pwdField.getText()));
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }
 
+    }
+
+    private void createRegWindow() {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/geekbrains/cloud/june/cloudapplication/register.fxml"));
+            Parent root = fxmlLoader.load();
+            regStage = new Stage();
+            regStage.setTitle("Cloud Registration");
+            regStage.setScene(new Scene(root));
+            regStage.show();
+            registerController = fxmlLoader.getController();
+            registerController.setController(this);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    public void tryToReg(String login, String password) {
+        try {
+            network = new Network(8189);
+            Thread readThread = new Thread(this::readLoop);
+            readThread.setDaemon(true);
+            readThread.start();
+            network.write(new RegRequest(login,password));
+            regStage.close();
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
+    }
+
+    public void registerAction(ActionEvent actionEvent) {
+        createRegWindow();
     }
 }
