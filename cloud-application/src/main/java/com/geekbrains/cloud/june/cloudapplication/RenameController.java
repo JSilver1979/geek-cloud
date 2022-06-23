@@ -14,14 +14,16 @@ public class RenameController {
 
     @FXML
     public TextField renameField;
+    @FXML
     public Label renameInfo;
+    @FXML
     public Button cancelRenameBttn;
 
-    private ChatController controller;
+    private MainController controller;
     private Path oldPath;
     private ListView lv;
 
-    public void setController(ChatController controller, ListView lv, Path oldFilePath) {
+    public void setController(MainController controller, ListView lv, Path oldFilePath) {
         this.controller = controller;
         this.oldPath = oldFilePath;
         this.lv = lv;
