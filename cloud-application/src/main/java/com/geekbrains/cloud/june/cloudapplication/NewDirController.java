@@ -7,8 +7,6 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
-import java.nio.file.Path;
-
 public class NewDirController {
     @FXML
     public TextField createField;

@@ -3,7 +3,6 @@ package com.geekbrains.cloud.june.cloudapplication;
 import com.geekbrains.cloud.*;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -12,7 +11,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseEvent;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -53,7 +51,6 @@ public class MainController implements Initializable {
 
     private Network network;
 
-    private Stage renameStage;
     private Stage regStage;
     private Stage newDirStage;
     private RenameController renameController;
@@ -86,9 +83,7 @@ public class MainController implements Initializable {
                         clientView.getItems().addAll(getFilesList(homeDir));
                     });
                 } else if (message instanceof WarningMessage warningMessage) {
-                    Platform.runLater(() -> {
-                        getWarning(warningMessage.getWarning());
-                    });
+                    Platform.runLater(() -> getWarning(warningMessage.getWarning()));
                 }
             }
         } catch (Exception e) {
@@ -107,33 +102,27 @@ public class MainController implements Initializable {
         setImages(clientView);
         setImages(serverView);
         
-        clientView.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent mouseEvent) {
-                if (mouseEvent.getClickCount() == 2) {
-                    String fileName = trueFileName(clientView.getSelectionModel().getSelectedItem());
-                    Path path = Paths.get(homeDir).resolve(fileName);
-                    if (path.toFile().isFile()) {
-                        getWarning("It is not a Directory");
-                    } else {
-                        homeDir = path.toString();
-                        clientView.getItems().clear();
-                        clientView.getItems().addAll(getFilesList(homeDir));
-                    }
+        clientView.setOnMouseClicked(mouseEvent -> {
+            if (mouseEvent.getClickCount() == 2) {
+                String fileName = trueFileName(clientView.getSelectionModel().getSelectedItem());
+                Path path = Paths.get(homeDir).resolve(fileName);
+                if (path.toFile().isFile()) {
+                    getWarning("It is not a Directory");
+                } else {
+                    homeDir = path.toString();
+                    clientView.getItems().clear();
+                    clientView.getItems().addAll(getFilesList(homeDir));
                 }
             }
         });
 
-        serverView.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent mouseEvent) {
-                if (mouseEvent.getClickCount() ==2 && isConnected) {
-                    String dir = trueFileName(serverView.getSelectionModel().getSelectedItem());
-                    try {
-                        network.write(new PathInRequest(dir));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+        serverView.setOnMouseClicked(mouseEvent -> {
+            if (mouseEvent.getClickCount() ==2 && isConnected) {
+                String dir = trueFileName(serverView.getSelectionModel().getSelectedItem());
+                try {
+                    network.write(new PathInRequest(dir));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             }
         });
@@ -249,6 +238,7 @@ public class MainController implements Initializable {
     public void renameAction(ActionEvent actionEvent) {
         try {
 
+            Stage renameStage;
             if (clientView.isFocused()) {
                 if (clientView.getSelectionModel().getSelectedItem() == null) {
                     getWarning("Please, choose file to rename!");
