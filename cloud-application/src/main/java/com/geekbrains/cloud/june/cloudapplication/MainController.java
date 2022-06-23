@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class ChatController implements Initializable {
+public class MainController implements Initializable {
     private final Image DIR_IMAGE = new Image("folder.png");
     private final Image FILE_IMAGE = new Image("file.png");
     @FXML
@@ -41,6 +41,7 @@ public class ChatController implements Initializable {
     public Button delBttn;
     public Button renameBttn;
     public Button upBttn;
+    public Button newDirBttn;
 
     private String homeDir;
 
@@ -54,8 +55,10 @@ public class ChatController implements Initializable {
 
     private Stage renameStage;
     private Stage regStage;
+    private Stage newDirStage;
     private RenameController renameController;
     private RegisterController registerController;
+    private NewDirController newDirController;
 
     private boolean isConnected;
 
@@ -280,7 +283,8 @@ public class ChatController implements Initializable {
                     renameStage.show();
                     renameController = fxmlLoader.getController();
 
-                    renameController.setController(this, serverView, Paths.get(trueFileName(serverView.getSelectionModel().getSelectedItem())));
+                    renameController.setController(this, serverView,
+                            Paths.get(trueFileName(serverView.getSelectionModel().getSelectedItem())));
                 }
             }
         }
@@ -308,6 +312,21 @@ public class ChatController implements Initializable {
 
         }
 
+    }
+
+    public void setNewDir(String dirName, ListView lv) {
+        try {
+            if (clientView.equals(lv)) {
+                Files.createDirectory(Paths.get(homeDir).resolve(dirName));
+                clientView.getItems().clear();
+                clientView.getItems().addAll(getFilesList(homeDir));
+                getWarning("Dir: " + dirName + " created");
+            } else if (serverView.equals(lv)){
+                network.write(new NewDirRequest(dirName));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void connectAction(ActionEvent actionEvent) {
@@ -355,5 +374,49 @@ public class ChatController implements Initializable {
 
     public void registerAction(ActionEvent actionEvent) {
         createRegWindow();
+    }
+
+    public void exitBttn(ActionEvent actionEvent) {
+        Platform.exit();
+    }
+
+    public void newDirAction(ActionEvent actionEvent) {
+        if (clientView.isFocused()) {
+            try {
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass()
+                        .getResource("/com/geekbrains/cloud/june/cloudapplication/newDir.fxml"));
+                Parent root = fxmlLoader.load();
+                newDirStage = new Stage();
+                newDirStage.setTitle("Creating new Directory");
+                newDirStage.setScene(new Scene(root));
+                newDirStage.show();
+
+                newDirController = fxmlLoader.getController();
+                newDirController.setController(this, clientView);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else if (serverView.isFocused()) {
+            if(isConnected) {
+                try {
+                    FXMLLoader fxmlLoader = new FXMLLoader(getClass()
+                            .getResource("/com/geekbrains/cloud/june/cloudapplication/newDir.fxml"));
+                    Parent root = fxmlLoader.load();
+                    newDirStage = new Stage();
+                    newDirStage.setTitle("Creating new Directory");
+                    newDirStage.setScene(new Scene(root));
+                    newDirStage.show();
+
+                    newDirController = fxmlLoader.getController();
+                    newDirController.setController(this, serverView);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                getWarning("You need to login first!");
+            }
+        } else {
+            getWarning("Please, choose client or server side!");
+        }
     }
 }

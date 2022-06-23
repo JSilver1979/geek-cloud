@@ -12,9 +12,9 @@ public class RegisterController {
     @FXML
     public PasswordField pwdField;
 
-    private ChatController controller;
+    private MainController controller;
 
-    public void setController(ChatController controller) {
+    public void setController(MainController controller) {
         this.controller = controller;
     }
 
